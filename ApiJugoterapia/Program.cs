@@ -1,4 +1,4 @@
-using ApiJugoterapia.Context;
+锘縰sing ApiJugoterapia.Context;
 using ApiJugoterapia.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -39,12 +39,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Configurar Swagger con autenticaci髇
+// Configurar Swagger con autenticaci贸n
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Jugoterapia API", Version = "v1" });
 
-    // Configurar autenticaci髇 JWT en Swagger
+    // Configurar autenticaci贸n JWT en Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
@@ -87,7 +87,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Middleware para servir archivos est醫icos
+// Middleware para servir archivos est谩ticos
 app.UseStaticFiles();
 
 // Usar CORS
@@ -95,7 +95,7 @@ app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 
-// Agregar autenticaci髇 y autorizaci髇
+// Agregar autenticaci贸n y autorizaci贸n
 app.UseAuthentication();
 app.UseAuthorization();
 

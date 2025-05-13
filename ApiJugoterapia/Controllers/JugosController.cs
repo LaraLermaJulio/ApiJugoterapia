@@ -16,14 +16,12 @@ namespace ApiJugoterapia.Controllers
     public class JugosController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IWebHostEnvironment _env;
         private readonly string _uploadPath;
 
-        public JugosController(AppDbContext context, IWebHostEnvironment env)
+        public JugosController(AppDbContext context)
         {
             _context = context;
-            _env = env;
-            _uploadPath = Path.Combine(_env.ContentRootPath, "uploads/images");
+            _uploadPath = @"C:\Users\ariza\Documentos\Proyects\Web\Jugoterapia\IMG";
 
             if (!Directory.Exists(_uploadPath))
             {
@@ -36,7 +34,10 @@ namespace ApiJugoterapia.Controllers
         {
             if (imagen != null && imagen.Length > 0)
             {
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                // Generar ID basado en fecha y hora
+                var timestampId = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var extension = Path.GetExtension(imagen.FileName); // incluye el punto: .jpg, .png, etc
+                var fileName = $"{timestampId}{extension}";
                 var filePath = Path.Combine(_uploadPath, fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
@@ -44,7 +45,8 @@ namespace ApiJugoterapia.Controllers
                     await imagen.CopyToAsync(stream);
                 }
 
-                jugo.ImagenUrl = $"/images/{fileName}";
+                // Guardar el nombre completo con extensión
+                jugo.ImagenUrl = fileName; // ahora guarda "20250512_183000.jpg"
             }
 
             _context.Jugos.Add(jugo);
@@ -54,94 +56,16 @@ namespace ApiJugoterapia.Controllers
         }
 
 
-
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutJugo(int id, [FromForm] Jugo jugo, IFormFile? imagen = null)
-        {
-            if (id != jugo.Id)
-                return BadRequest("El ID proporcionado no coincide con el ID del jugo");
-
-            if (imagen != null && imagen.Length > 0)
-            {
-                // Eliminar imagen anterior
-                if (!string.IsNullOrEmpty(jugo.ImagenUrl))
-                {
-                    var oldImagePath = Path.Combine(_uploadPath, Path.GetFileName(jugo.ImagenUrl));
-                    if (System.IO.File.Exists(oldImagePath))
-                    {
-                        System.IO.File.Delete(oldImagePath);
-                    }
-                }
-
-                // Guardar nueva imagen
-                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
-                var filePath = Path.Combine(_uploadPath, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await imagen.CopyToAsync(stream);
-                }
-
-                jugo.ImagenUrl = $"/images/{fileName}";
-            }
-
-            _context.Entry(jugo).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!JugoExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Jugo>>> GetJugos([FromQuery] int? tipo, [FromQuery] string? nombre, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<IEnumerable<Jugo>>> GetJugos()
         {
-            IQueryable<Jugo> query = _context.Jugos;
-
-            if (tipo.HasValue)
-            {
-                query = query.Where(j => j.Tipo == tipo);
-            }
-
-            if (!string.IsNullOrEmpty(nombre))
-            {
-                query = query.Where(j => j.Nombre.Contains(nombre));
-            }
-
-            var totalItems = await query.CountAsync();
-
-            var items = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            Response.Headers.Append("X-Total-Count", totalItems.ToString());
-            Response.Headers.Append("X-Page-Size", pageSize.ToString());
-            Response.Headers.Append("X-Current-Page", page.ToString());
-            Response.Headers.Append("X-Total-Pages", Math.Ceiling((double)totalItems / pageSize).ToString());
-
-            return items;
+            return await _context.Jugos.ToListAsync();
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Jugo>> GetJugo(int id)
         {
             var jugo = await _context.Jugos.FindAsync(id);
-
             if (jugo == null)
             {
                 return NotFound();
@@ -161,7 +85,7 @@ namespace ApiJugoterapia.Controllers
 
             if (!string.IsNullOrEmpty(jugo.ImagenUrl))
             {
-                var imagePath = Path.Combine(_uploadPath, Path.GetFileName(jugo.ImagenUrl));
+                var imagePath = Path.Combine(_uploadPath, $"{jugo.ImagenUrl}.png"); // Asumiendo .png
                 if (System.IO.File.Exists(imagePath))
                 {
                     System.IO.File.Delete(imagePath);
@@ -172,11 +96,6 @@ namespace ApiJugoterapia.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool JugoExists(int id)
-        {
-            return _context.Jugos.Any(e => e.Id == id);
         }
     }
 }
