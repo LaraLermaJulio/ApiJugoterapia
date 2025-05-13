@@ -20,5 +20,6 @@
         public string Token { get; set; } = string.Empty;
         public int UserId { get; set; }
         public string Nombre { get; set; } = string.Empty;
+        public tipoUsuario TipoUsuario { get; set; } = tipoUsuario.cliente;
     }
 }

@@ -83,19 +83,71 @@ namespace ApiJugoterapia.Controllers
                 return NotFound();
             }
 
-            if (!string.IsNullOrEmpty(jugo.ImagenUrl))
-            {
-                var imagePath = Path.Combine(_uploadPath, $"{jugo.ImagenUrl}.png"); // Asumiendo .png
-                if (System.IO.File.Exists(imagePath))
-                {
-                    System.IO.File.Delete(imagePath);
-                }
-            }
+          
 
             _context.Jugos.Remove(jugo);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutJugo(int id, [FromForm] Jugo jugo, IFormFile? imagen = null)
+        {
+            var jugoExistente = await _context.Jugos.FindAsync(id);
+            if (jugoExistente == null)
+                return NotFound("Jugo no encontrado");
+
+            // Actualizar campos
+            jugoExistente.Nombre = jugo.Nombre;
+            jugoExistente.Descripcion = jugo.Descripcion;
+            jugoExistente.Ingredientes = jugo.Ingredientes;
+            jugoExistente.Precio = jugo.Precio;
+            jugoExistente.Unidades = jugo.Unidades;
+            jugoExistente.Tipo = jugo.Tipo;
+
+            // Si se envía una imagen nueva
+            if (imagen != null && imagen.Length > 0)
+            {
+                // Generar nuevo nombre basado en fecha/hora
+                var timestampId = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var extension = Path.GetExtension(imagen.FileName);
+                var fileName = $"{timestampId}{extension}";
+                var filePath = Path.Combine(_uploadPath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imagen.CopyToAsync(stream);
+                }
+
+                // Opcional: eliminar imagen anterior
+                if (!string.IsNullOrEmpty(jugoExistente.ImagenUrl))
+                {
+                    var rutaVieja = Path.Combine(_uploadPath, jugoExistente.ImagenUrl);
+                    if (System.IO.File.Exists(rutaVieja))
+                        System.IO.File.Delete(rutaVieja);
+                }
+
+                jugoExistente.ImagenUrl = fileName;
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPut("{id}/visible")]
+        public async Task<IActionResult> OcultarJugo(int id)
+        {
+            var jugo = await _context.Jugos.FindAsync(id);
+            if (jugo == null)
+                return NotFound("Jugo no encontrado");
+
+            jugo.Visible = false;
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+
     }
 }

@@ -80,7 +80,8 @@ namespace ApiJugoterapia.Controllers
             {
                 Token = token,
                 UserId = cliente.Id,
-                Nombre = cliente.Nombre
+                Nombre = cliente.Nombre,
+                TipoUsuario = cliente.TipoUsuario
             });
         }
 
