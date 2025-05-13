@@ -10,7 +10,7 @@ namespace ApiJugoterapia.Models
         public required string Descripcion { get; set; }
         public required string Ingredientes { get; set; }
         public required double Precio { get; set; }
-        public required double Unidades { get; set; }
+        public required int Unidades { get; set; }
 
         [BindNever]
         public string? ImagenUrl { get; set; }
